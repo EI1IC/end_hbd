@@ -132,7 +132,7 @@
             width: 100%;
             aspect-ratio: 3/4;
             overflow: hidden;
-            border-radius: 10px;
+            border-radius: 50px;
             /* ✅ Скругление углов */
             /* Блюр по краям экрана — с учётом скругления */
             -webkit-mask:
@@ -155,22 +155,22 @@
             width: var(--edge-blur);
             z-index: 2;
             pointer-events: none;
-            border-radius: 10px;
+            border-radius: 50px;
             /* ✅ Скругление для блюр-слоёв */
         }
 
         .photo-wrapper::before {
             left: 0;
             background: linear-gradient(to right, rgba(213, 218, 224, 0.9), transparent);
-            border-top-left-radius: 10px;
-            border-bottom-left-radius: 10px;
+            border-top-left-radius: 50px;
+            border-bottom-left-radius: 50px;
         }
 
         .photo-wrapper::after {
             right: 0;
             background: linear-gradient(to left, rgba(213, 218, 224, 0.9), transparent);
-            border-top-right-radius: 10px;
-            border-bottom-right-radius: 10px;
+            border-top-right-radius: 50px;
+            border-bottom-right-radius: 50px;
         }
 
         .photo-item img {
@@ -178,7 +178,7 @@
             height: 100%;
             object-fit: cover;
             display: block;
-            border-radius: 10px;
+            border-radius: 50px;
             /* ✅ Скругление самого изображения */
             background: #c8cdd4;
         }
