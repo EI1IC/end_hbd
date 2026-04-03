@@ -103,13 +103,12 @@
         }
 
         /* Фотографии — у самых краёв */
+        /* Фотографии — у самых краёв */
         .photo-item {
             width: 100%;
             opacity: 0;
             transition: all 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
             position: relative;
-            padding: 0 4px;
-            /* небольшой отступ чтобы блюр не обрезался */
         }
 
         .photo-item.left {
@@ -131,46 +130,12 @@
             position: relative;
             width: 100%;
             aspect-ratio: 3/4;
+            border-radius: 10px;
+            /* ✅ Скругление */
             overflow: hidden;
-            border-radius: 50px;
-            /* ✅ Скругление углов */
-            /* Блюр по краям экрана — с учётом скругления */
-            -webkit-mask:
-                linear-gradient(to right, transparent 0px, black var(--edge-blur), black calc(100% - var(--edge-blur)), transparent 100%),
-                linear-gradient(red, red);
-            /* второй слой для применения border-radius */
-            -webkit-mask-composite: destination-in;
-            mask:
-                linear-gradient(to right, transparent 0px, black var(--edge-blur), black calc(100% - var(--edge-blur)), transparent 100%),
-                linear-gradient(red, red);
-            mask-composite: intersect;
-        }
-
-        .photo-wrapper::before,
-        .photo-wrapper::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: var(--edge-blur);
-            z-index: 2;
-            pointer-events: none;
-            border-radius: 50px;
-            /* ✅ Скругление для блюр-слоёв */
-        }
-
-        .photo-wrapper::before {
-            left: 0;
-            background: linear-gradient(to right, rgba(213, 218, 224, 0.9), transparent);
-            border-top-left-radius: 50px;
-            border-bottom-left-radius: 50px;
-        }
-
-        .photo-wrapper::after {
-            right: 0;
-            background: linear-gradient(to left, rgba(213, 218, 224, 0.9), transparent);
-            border-top-right-radius: 50px;
-            border-bottom-right-radius: 50px;
+            /* ✅ Обрезает всё, что выходит за радиус */
+            background: #c8cdd4;
+            /* Фон, если фото не загрузится */
         }
 
         .photo-item img {
@@ -178,9 +143,45 @@
             height: 100%;
             object-fit: cover;
             display: block;
-            border-radius: 50px;
-            /* ✅ Скругление самого изображения */
-            background: #c8cdd4;
+            /* border-radius не нужен здесь — наследуется от wrapper через overflow:hidden */
+        }
+
+        /* ✅ Оверлей для блюра по краям — теперь уважает border-radius */
+        .photo-wrapper::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1;
+            pointer-events: none;
+            /* Градиент от цвета фона к прозрачному по краям */
+            background: linear-gradient(to right,
+                    rgba(190, 215, 255, 0.75) 0%,
+                    transparent var(--edge-blur),
+                    transparent calc(100% - var(--edge-blur)),
+                    rgba(190, 215, 255, 0.75) 100%);
+            /* Наследует border-radius от родителя благодаря overflow:hidden */
+        }
+
+        /* Опционально: чуть более выраженный блюр для тёмных участков градиента фона */
+        .photo-wrapper::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1;
+            pointer-events: none;
+            background: linear-gradient(to right,
+                    rgba(126, 59, 59, 0.5) 0%,
+                    transparent calc(var(--edge-blur) * 1.5),
+                    transparent calc(100% - calc(var(--edge-blur) * 1.5)),
+                    rgba(126, 59, 59, 0.5) 100%);
+            opacity: 0.4;
+            mix-blend-mode: multiply;
         }
 
         /* Пожелания */
@@ -312,7 +313,7 @@
     <div id="startHint">Коснись экрана, чтобы включить музыку</div>
 
     <header>
-        <h1>Тап по экрану <br> & <br> Листай вниз, чтобы отправится в путешествие</h1>
+        <h1>Листай вниз, чтобы отправится в путешествие</h1>
     </header>
 
     <main class="gallery">
