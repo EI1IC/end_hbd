@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Для Леры ❤️</title>
+    <style>
+        :root {
+            /* Чуть более тёмные цвета */
+            --bg-1: #e8eaed;
+            --bg-2: #d5dae0;
+            --bg-3: #e6e2f0;
+            --text: #454555;
+            --card: rgba(240, 240, 245, 0.85);
+            --shadow: 0 8px 32px rgba(80, 90, 110, 0.25);
+            --edge-blur: 12px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        
+        html, body {
+            width: 100%;
+            overflow-x: hidden;
+        }
+        
+        body {
+            background: linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 50%, var(--bg-3) 100%);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+        
+        canvas#confetti {
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0; pointer-events: none;
+        }
+
+        /* Подсказка для музыки */
+        #startHint {
+            position: fixed; bottom: 20px; left: 50%;
+            transform: translateX(-50%);
+            background: var(--card); padding: 12px 20px;
+            border-radius: 50px; font-size: 0.95rem;
+            box-shadow: var(--shadow); z-index: 100;
+            cursor: pointer; opacity: 0.95;
+            transition: opacity 0.5s;
+            max-width: 90%;
+            text-align: center;
+        }
+        #startHint.hidden { opacity: 0; pointer-events: none; }
+
+        header {
+            text-align: center; padding: 50px 16px 30px;
+            position: relative; z-index: 1;
+            animation: fadeDown 1.2s ease-out;
+        }
+        header h1 {
+            font-size: clamp(1.8rem, 6vw, 3rem);
+            font-weight: 300; color: #3a3a4a; margin-bottom: 8px;
+        }
+        header p { font-size: 1.05rem; opacity: 0.85; }
+
+        main.gallery {
+            width: 100%;
+            padding: 0;
+            position: relative; z-index: 1;
+            display: flex; flex-direction: column; gap: 40px;
+        }
+
+        /* Фотографии — у самых краёв */
+        .photo-item {
+            width: 100%;
+            opacity: 0;
+            transition: all 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+            position: relative;
+        }
+        .photo-item.left { align-self: flex-start; transform: translateX(-100px); }
+        .photo-item.right { align-self: flex-end; transform: translateX(100px); }
+        .photo-item.visible { opacity: 1; transform: translateX(0); }
+
+        .photo-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 3/4;
+            overflow: hidden;
+            /* Блюр по краям экрана */
+            -webkit-mask: linear-gradient(
+                to right,
+                transparent 0px,
+                black var(--edge-blur),
+                black calc(100% - var(--edge-blur)),
+                transparent 100%
+            );
+            mask: linear-gradient(
+                to right,
+                transparent 0px,
+                black var(--edge-blur),
+                black calc(100% - var(--edge-blur)),
+                transparent 100%
+            );
+        }
+        
+        .photo-wrapper::before,
+        .photo-wrapper::after {
+            content: '';
+            position: absolute;
+            top: 0; bottom: 0;
+            width: var(--edge-blur);
+            z-index: 2;
+            pointer-events: none;
+        }
+        .photo-wrapper::before {
+            left: 0;
+            background: linear-gradient(to right, 
+                rgba(213, 218, 224, 0.9), 
+                transparent);
+        }
+        .photo-wrapper::after {
+            right: 0;
+            background: linear-gradient(to left, 
+                rgba(213, 218, 224, 0.9), 
+                transparent);
+        }
+
+        .photo-item img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            display: block;
+            border-radius: 0;
+            background: #c8cdd4;
+        }
+
+        /* Пожелания */
+        .wish {
+            align-self: center; text-align: center;
+            max-width: 92%; width: fit-content;
+            padding: 22px 28px;
+            background: var(--card); backdrop-filter: blur(12px);
+            border-radius: 20px; box-shadow: var(--shadow);
+            opacity: 0; transform: translateY(30px);
+            transition: all 0.8s ease-out;
+            font-size: clamp(1rem, 3.5vw, 1.15rem);
+            line-height: 1.6;
+            margin: 10px auto;
+        }
+        .wish.visible { opacity: 1; transform: translateY(0); }
+
+        /* Футер */
+        footer.final {
+            text-align: center; padding: 70px 16px 90px;
+            position: relative; z-index: 1;
+        }
+        footer h2 {
+            font-size: clamp(1.6rem, 7vw, 3rem);
+            font-weight: 400; color: #3a3a4a;
+            opacity: 0; transform: scale(0.9);
+            transition: all 1s ease-out;
+        }
+        footer.visible h2 { opacity: 1; transform: scale(1); }
+
+        @keyframes fadeDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Адаптив для мобильных — оптимизация */
+        @media (max-width: 480px) {
+            :root { --edge-blur: 10px; }
+            
+            header { padding: 40px 12px 25px; }
+            header h1 { font-size: clamp(1.6rem, 7vw, 2.6rem); }
+            
+            main.gallery { gap: 32px; }
+            
+            .photo-item.left { transform: translateX(-60px); }
+            .photo-item.right { transform: translateX(60px); }
+            
+            .wish { 
+                max-width: 94%; 
+                padding: 20px 24px;
+                font-size: clamp(0.95rem, 4vw, 1.1rem);
+            }
+            
+            footer.final { padding: 60px 12px 80px; }
+            footer h2 { font-size: clamp(1.5rem, 8vw, 2.6rem); }
+            
+            #startHint { 
+                font-size: 0.9rem; 
+                padding: 10px 16px;
+                bottom: 16px;
+            }
+        }
+        
+        /* Для очень маленьких экранов */
+        @media (max-width: 360px) {
+            :root { --edge-blur: 8px; }
+            .photo-item.left { transform: translateX(-40px); }
+            .photo-item.right { transform: translateX(40px); }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="confetti"></canvas>
+    <audio id="bgMusic" src="music.mp3" loop preload="auto"></audio>
+    <div id="startHint">Коснись экрана, чтобы включить музыку</div>
+
+    <header>
+        <h1>Листай вниз, чтобы отправится в путешествие</h1>
+    </header>
+
+    <main class="gallery">
+        <div class="photo-item left"><div class="photo-wrapper"><img src="photo1.png" alt="Фото 1"></div></div>
+        <div class="photo-item right"><div class="photo-wrapper"><img src="photo2.png" alt="Фото 2"></div></div>
+        <div class="wish">Пусть каждый день дарит лёгкость и улыбку</div>
+        <div class="photo-item left"><div class="photo-wrapper"><img src="photo3.png" alt="Фото 3"></div></div>
+        <div class="photo-item right"><div class="photo-wrapper"><img src="photo4.png" alt="Фото 4"></div></div>
+        <div class="wish">Ты наполняешь мир теплом и красками</div>
+        <div class="photo-item left"><div class="photo-wrapper"><img src="photo5.png" alt="Фото 5"></div></div>
+        <div class="photo-item right"><div class="photo-wrapper"><img src="photo6.png" alt="Фото 6"></div></div>
+        <div class="wish">Пусть сбываются самые смелые мечты</div>
+        <div class="photo-item left"><div class="photo-wrapper"><img src="photo7.png" alt="Фото 7"></div></div>
+        <div class="photo-item right"><div class="photo-wrapper"><img src="photo8.png" alt="Фото 8"></div></div>
+        <div class="wish">Твоя энергия вдохновляет всех вокруг</div>
+        <div class="photo-item left"><div class="photo-wrapper"><img src="photo11.png" alt="Фото 9"></div></div>
+        <div class="photo-item right"><div class="photo-wrapper"><img src="photo12.png" alt="Фото 10"></div></div>
+        <div class="wish">Желаю гармонии в душе и радости в мелочах</div>
+        <div class="wish">Пусть удача идёт рядом на каждом шагу</div>
+        <div class="wish">Ты заслуживаешь всего самого светлого</div>
+        <div class="wish">Пусть этот год станет началом чего-то волшебного</div>
+        <div class="wish">Спасибо, что ты есть</div>
+        <div class="photo-item left"><div class="photo-wrapper"><img src="photo9.jpg" alt="Фото 11"></div></div>
+        <div class="photo-item right"><div class="photo-wrapper"><img src="photo10.jpg" alt="Фото 12"></div></div>
+    </main>
+
+    <footer class="final">
+        <h2>Любимая Лера С Днем Рождения</h2>
+    </footer>
+
+    <script>
+        // === 1. Конфетти + сердечки (пастельные оттенки) ===
+        const canvas = document.getElementById('confetti');
+        const ctx = canvas.getContext('2d');
+        let w, h;
+        const particles = [];
+        const colors = ['#FFB3BA', '#FF9EAA', '#FF7B94', '#FFDFBA', '#FFFFBA', '#BAFFC9', '#BAE1FF', '#E0BBE4', '#D4A5A5', '#C9D6DF'];
+
+        function resize() { 
+            w = canvas.width = window.innerWidth; 
+            h = canvas.height = window.innerHeight; 
+        }
+        window.addEventListener('resize', resize); 
+        window.addEventListener('orientationchange', () => { setTimeout(resize, 300); });
+        resize();
+
+        // Функция рисования сердечка
+        function drawHeart(x, y, size, color) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            // Кривые Безье для формы сердца
+            ctx.moveTo(0, -size * 0.2);
+            ctx.bezierCurveTo(
+                -size * 0.5, -size * 0.6,
+                -size, 0,
+                0, size * 0.8
+            );
+            ctx.bezierCurveTo(
+                size, 0,
+                size * 0.5, -size * 0.6,
+                0, -size * 0.2
+            );
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+
+        class Particle {
+            constructor() { 
+                this.reset(); 
+                this.y = Math.random() * h; 
+            }
+            reset() {
+                this.x = Math.random() * w; 
+                this.y = -30;
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+                this.size = Math.random() * 7 + 4;
+                this.speedY = Math.random() * 1.5 + 0.5;
+                this.speedX = Math.random() * 1.2 - 0.6;
+                this.rotation = Math.random() * Math.PI * 2;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.05;
+                // Три типа: прямоугольник, круг, сердечко
+                const rand = Math.random();
+                if (rand < 0.33) this.shape = 'rect';
+                else if (rand < 0.66) this.shape = 'circle';
+                else this.shape = 'heart';
+            }
+            update() {
+                this.y += this.speedY; 
+                this.x += this.speedX;
+                this.rotation += this.rotationSpeed;
+                if (this.y > h + 40) this.reset();
+            }
+            draw() {
+                ctx.save(); 
+                ctx.translate(this.x, this.y); 
+                ctx.rotate(this.rotation);
+                ctx.fillStyle = this.color;
+                
+                if (this.shape === 'rect') {
+                    ctx.fillRect(-this.size/2, -this.size/4, this.size, this.size/2);
+                } else if (this.shape === 'circle') {
+                    ctx.beginPath(); 
+                    ctx.arc(0, 0, this.size/2, 0, Math.PI*2); 
+                    ctx.fill();
+                } else {
+                    // Рисуем сердечко
+                    drawHeart(0, 0, this.size * 0.9, this.color);
+                }
+                ctx.restore();
+            }
+        }
+        
+        // Увеличиваем количество частиц для мобильных экранов
+        const particleCount = Math.min(120, Math.floor(window.innerWidth / 3));
+        for(let i = 0; i < particleCount; i++) {
+            particles.push(new Particle());
+        }
+        
+        (function animate(){ 
+            ctx.clearRect(0, 0, w, h); 
+            particles.forEach(p => { p.update(); p.draw(); }); 
+            requestAnimationFrame(animate); 
+        })();
+
+        // === 2. Появление элементов при скролле ===
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target); // Оптимизация
+                }
+            });
+        }, { threshold: 0.12 });
+        
+        document.querySelectorAll('.photo-item, .wish, footer').forEach(el => observer.observe(el));
+
+        // === 3. Музыка (обход политики автоплея) ===
+        const audio = document.getElementById('bgMusic');
+        const hint = document.getElementById('startHint');
+        
+        // Попытка автоплея
+        const tryPlay = () => {
+            audio.play().then(() => { 
+                hint.classList.add('hidden'); 
+            }).catch(e => {
+                // Автоплей заблокирован — ждём взаимодействия
+                console.log('Autoplay blocked, waiting for user interaction');
+            });
+        };
+        
+        // Пробуем сразу
+        tryPlay();
+        
+        // Обработчики для включения по касанию
+        const enableMusic = () => {
+            audio.play().then(() => {
+                hint.classList.add('hidden');
+            }).catch(() => {
+                // Если всё ещё не вышло — просто скрываем подсказку
+                hint.classList.add('hidden');
+            });
+            document.removeEventListener('click', enableMusic);
+            document.removeEventListener('touchstart', enableMusic);
+            document.removeEventListener('touchend', enableMusic);
+        };
+        
+        document.addEventListener('click', enableMusic, { passive: true });
+        document.addEventListener('touchstart', enableMusic, { passive: true });
+        document.addEventListener('touchend', enableMusic, { passive: true });
+        
+        // === 4. Оптимизация для мобильных: отключаем зум при двойном тапе ===
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function (event) {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, { passive: false });
+    </script>
+</body>
+</html>
